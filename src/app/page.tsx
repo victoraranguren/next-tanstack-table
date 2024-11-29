@@ -4,8 +4,12 @@ import {
   createColumnHelper,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { useState } from "react";
 
 export default function HomePage() {
   const columnHelper = createColumnHelper();
@@ -19,6 +23,9 @@ export default function HomePage() {
     columnHelper.accessor("dayOfBirthday", { header: "dayOfBirthday" }),
   ];
 
+  const [sorting, setSorting] = useState([]);
+  const [filtering, setFiltering] = useState("");
+
   //1. initialize table throught this hook
   const table = useReactTable({
     //1.1 Define columns
@@ -27,24 +34,48 @@ export default function HomePage() {
     data,
     //1.3 call and pass the function getCoreRowModel()
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    state: { sorting, globalFilter: filtering },
+    onSortingChange: setSorting,
+    onGlobalFilterChange: setFiltering,
   });
 
   console.log(data);
 
   return (
     <div>
+      <input
+        type="text"
+        value={filtering}
+        onChange={(e) => setFiltering(e.target.value)}
+      />
+
       <table>
         <thead>
           {table.getHeaderGroups().map((headerGroup) => (
             <tr key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
-                <th key={header.id} colSpan={header.colSpan}>
-                  {header.isPlaceholder
-                    ? null
-                    : flexRender(
+                <th
+                  key={header.id}
+                  colSpan={header.colSpan}
+                  onClick={header.column.getToggleSortingHandler()}
+                >
+                  {header.isPlaceholder ? null : (
+                    <div>
+                      {flexRender(
                         header.column.columnDef.header,
                         header.getContext()
                       )}
+                      {
+                        {
+                          asc: "⬆️",
+                          desc: "⬇️",
+                        }[header.column.getIsSorted() ?? null]
+                      }
+                    </div>
+                  )}
                 </th>
               ))}
             </tr>
@@ -62,6 +93,31 @@ export default function HomePage() {
           ))}
         </tbody>
       </table>
+
+      <button
+        onClick={() => table.setPageIndex(0)}
+        className="bg-blue-600 text-white p-2 rounded"
+      >
+        Primer Pagina
+      </button>
+      <button
+        onClick={() => table.previousPage()}
+        className="bg-blue-600 text-white p-2 rounded"
+      >
+        Pagina Anterior
+      </button>
+      <button
+        onClick={() => table.nextPage()}
+        className="bg-blue-600 text-white p-2 rounded"
+      >
+        Pagina Siguiente
+      </button>
+      <button
+        onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+        className="bg-blue-600 text-white p-2 rounded"
+      >
+        Ultima Pagina
+      </button>
     </div>
   );
 }
